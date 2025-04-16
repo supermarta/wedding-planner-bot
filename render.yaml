@@ -10,7 +10,7 @@ services:
     autoDeploy: true
     plan: free  
     branch: master
-    region: us-west  
+    region: us-east  
     healthCheckPath: /health  
     healthCheckIntervalSeconds: 10
     healthCheckTimeoutSeconds: 5
