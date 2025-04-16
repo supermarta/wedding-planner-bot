@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: wedding-planner-bot  
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn app:app"  
+    envVars:
+      - key: OPENAI_API_KEY
+        value: ${OPENAI_API_KEY}  
+    autoDeploy: true
+    plan: free  
+    branch: master
+    region: us-west  
+    healthCheckPath: /health  
+    healthCheckIntervalSeconds: 10
+    healthCheckTimeoutSeconds: 5
+    healthCheckRetries: 3

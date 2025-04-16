@@ -1,0 +1,16 @@
+<h2>Propuesta personalizada para tu boda</h2>
+<p><strong>Opción gastronómica:</strong> {{ gastronomic_type }}</p>
+<p><strong>Número de invitados:</strong> {{ guests }}</p>
+<p><strong>Horario:</strong> {{ time_of_day }}</p>
+
+<h3>Menú seleccionado:</h3>
+<ul>
+  {% for item in selected_items %}
+    <li>{{ item }}</li>
+  {% endfor %}
+</ul>
+
+<p><strong>Precio por invitado (IVA incluido):</strong> {{ price_per_guest }} €</p>
+<p><strong>Total menú:</strong> {{ total_price }} €</p>
+
+<p>Incluye: Cóctel, postre, barra libre 3h + DJ, sorbete, cafés, bebidas.</p>

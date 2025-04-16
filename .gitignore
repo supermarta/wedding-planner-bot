@@ -1,0 +1,22 @@
+# Ignore the virtual environment folder
+venv/
+
+# Ignore .env file
+.env
+
+# Ignore VS Code settings (optional)
+.vscode/
+
+# Ignore Python bytecode files
+__pycache__/
+*.pyc
+
+# Ignore any logs (optional)
+*.log
+
+# Ignore Jupyter Notebook checkpoints (optional)
+.ipynb_checkpoints/
+
+# Ignore other unwanted files (optional)
+*.bak
+*.swp
