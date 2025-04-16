@@ -12,10 +12,6 @@ load_dotenv()
 
 # Load and print keys
 api_key = os.getenv("OPENAI_API_KEY")
-print("API Key Loaded:", api_key)
-print("Commercial Email Loaded:", os.getenv("COMMERCIAL_EMAIL"))
-print("Email User Loaded:", os.getenv("EMAIL_USER"))
-
 # ✅ Initialize OpenAI client
 client = OpenAI(api_key=api_key)
 
