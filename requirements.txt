@@ -1,3 +1,4 @@
+os
 Flask
 pandas
 openpyxl
@@ -6,3 +7,4 @@ openai
 xhtml2pdf
 google-api-python-client
 google-auth
+gunicorn
