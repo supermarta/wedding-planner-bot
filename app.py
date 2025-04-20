@@ -1,4 +1,130 @@
-from flask import Flask, request, jsonify, render_template, send_file
+from flask import Flask, request, jsonify, render_template, send_file, session
+from services.excel_service import load_menu_data, filter_menu
+from services.menu_builder import calculate_menu_price
+from services.email_service import send_email
+from services.pdf_generator import generate_pdf
+from openai import OpenAI
+from dotenv import load_dotenv
+import os
+
+# Load environment variables
+load_dotenv()
+
+api_key = os.getenv("OPENAI_API_KEY")
+COMMERCIAL_EMAIL = os.getenv("COMMERCIAL_EMAIL")
+
+# Initialize OpenAI client
+client = OpenAI(api_key=api_key)
+
+# Flask setup
+app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY", "your-default-secret")
+
+# Helper: Initialize session messages
+DEFAULT_SYSTEM_PROMPT = """
+Eres un asistente comercial experto en menús de boda.
+Siempre debes guiar al cliente de forma amable y profesional.
+Debes recordar lo que el cliente ya ha dicho y evitar repetir preguntas innecesarias.
+Nunca muestres precios individuales. Muestra solo el precio final del menú por invitado con IVA incluido.
+Si el cliente no elige una opción, sugiere Alquimia destacando que tiene estrella michelín, pero sin insistir.
+Debes hacer las siguientes preguntas clave:
+1. ¿Qué opción gastronómica prefieres: Alquimia o Chas?
+2. ¿Cuántos invitados habrá?
+3. ¿El evento es de día o de noche?
+Después, ayuda a construir un menú personalizado según sus preferencias.
+Asegúrate de tener en cuenta recargos adicionales: 3€ por eventos nocturnos, 1500€ si hay menos de 80 invitados, y aplica IVA del 10% al precio total.
+"""
+
+def get_session_messages():
+    if "messages" not in session:
+        session["messages"] = [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}]
+    return session["messages"]
+
+# Root
+@app.route('/')
+def index():
+    return render_template('chatbot.html')
+
+# Chatbot Route
+@app.route('/api/chat', methods=['POST'])
+def chat():
+    user_message = request.json.get('message')
+    messages = get_session_messages()
+    messages.append({"role": "user", "content": user_message})
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=messages
+        )
+        reply = response.choices[0].message.content
+        messages.append({"role": "assistant", "content": reply})
+        session["messages"] = messages  # Update session
+        return jsonify({"reply": reply})
+    except Exception as e:
+        return jsonify({"reply": "Lo siento, ha ocurrido un error al procesar tu mensaje."})
+
+# Price Calculator
+@app.route('/api/calculate', methods=['POST'])
+def calculate():
+    data = request.json
+    df = load_menu_data()
+    filtered = filter_menu(df, data['gastronomic_type'])
+
+    selected_items = []
+    for _, row in filtered.iterrows():
+        if row['Nombre'] in data['selected_items']:
+            selected_items.append(row.to_dict())
+
+    price_details = calculate_menu_price(
+        selected_items,
+        data['guests'],
+        data['gastronomic_type'],
+        data['time_of_day']
+    )
+
+    return jsonify(price_details)
+
+# Send PDF Proposal
+@app.route('/api/send-proposal', methods=['POST'])
+def send_proposal():
+    data = request.json
+    html = render_template("proposal.html", **data)
+    pdf_path = generate_pdf(html)
+    send_email(data['email'], "Tu propuesta de menú para la boda", html)
+    return send_file(pdf_path, as_attachment=True)
+
+# Confirm Proposal to Commercial Team
+@app.route('/api/confirm-proposal', methods=['POST'])
+def confirm_proposal():
+    data = request.json
+    proposals_html = ""
+    for i, prop in enumerate(data['proposals']):
+        proposals_html += f"<h4>Propuesta {i+1}</h4>"
+        proposals_html += f"<p>Opción: {prop['gastronomic_type']} | Invitados: {prop['guests']} | Horario: {prop['time_of_day']}</p>"
+        proposals_html += f"<p>Menú: {', '.join(prop['selected_items'])}</p>"
+        proposals_html += f"<p><strong>Precio final:</strong> {prop['total_price']} €</p><hr>"
+
+    full_message = f"""
+    <h3>Nuevo cliente interesado</h3>
+    <p><strong>Nombre:</strong> {data['name']}</p>
+    <p><strong>Email:</strong> {data['email']}</p>
+    <p><strong>Teléfono:</strong> {data['phone']}</p>
+    {proposals_html}
+    """
+
+    send_email(COMMERCIAL_EMAIL, "Nueva propuesta confirmada desde el chatbot", full_message)
+
+    return jsonify({
+        "message": "Propuesta enviada al departamento comercial. Puedes contactarles al +34 655953034"
+    })
+
+if __name__ == '__main__':
+    app.run(debug=False, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
+
+
+'''from flask import Flask, request, jsonify, render_template, send_file
 from services.excel_service import load_menu_data, filter_menu
 from services.menu_builder import calculate_menu_price
 from services.email_service import send_email
@@ -117,7 +243,7 @@ def confirm_proposal():
 
 
 if __name__ == '__main__':
-    app.run(debug=False, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    app.run(debug=False, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))'''
 
 
 
