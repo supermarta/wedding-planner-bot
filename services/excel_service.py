@@ -6,7 +6,7 @@ def load_menu_data():
     return df
 
 def filter_menu(df, gastronomic_type):
-    return df[df['Opciones'].str.lower().str.contains(gastronomic_type.lower())]
+    return df[df['CATEGORIA'].str.lower().str.contains(gastronomic_type.lower())]
 
 
 
