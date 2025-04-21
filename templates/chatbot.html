@@ -62,6 +62,14 @@
         </div>
     </div>
 
+        <!-- Dish selection UI -->
+        <div class="input-box" style="margin-top: 20px;">
+          <label for="dishDropdown"><strong>Select Dishes:</strong></label><br />
+          <select id="dishDropdown" multiple style="width: 100%; height: 120px; margin-top: 5px;"></select>
+          <button onclick="submitSelection()" style="margin-top: 10px;">Submit Selection</button>
+        </div>
+      </div>
+    
     <script>
         function appendMessage(content, sender) {
             const chatbox = document.getElementById('chatbox');
@@ -87,7 +95,52 @@
             const data = await response.json();
             appendMessage(data.reply, 'Bot');
         }
-    </script>
+        // Load dishes based on gastronomic type
+    async function loadDishes(gastronomic_type) {
+      const response = await fetch('/api/get-dishes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gastronomic_type: gastronomic_type })
+      });
 
+      const data = await response.json();
+      const dropdown = document.getElementById("dishDropdown");
+      dropdown.innerHTML = "";
+      data.dishes.forEach(dish => {
+        const option = document.createElement("option");
+        option.value = dish;
+        option.text = dish;
+        dropdown.appendChild(option);
+      });
+    }
+
+    // Submit selected dishes for pricing
+    async function submitSelection() {
+      const dropdown = document.getElementById("dishDropdown");
+      const selected = Array.from(dropdown.selectedOptions).map(opt => opt.value);
+
+      // TODO: Replace below values with actual ones collected via bot
+      const body = {
+        gastronomic_type: "Alquimia",  
+        guests: 80,                    
+        time_of_day: "día",           
+        selected_items: selected
+      };
+
+      const response = await fetch('/api/calculate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      const data = await response.json();
+      alert("Total price: " + data.total_price + "€ (IVA incl.)");
+    }
+
+    // Optional: auto-load dishes on page load
+    window.onload = () => {
+      loadDishes("Alquimia"); // default type
+    };
+    </script>
 </body>
 </html>
