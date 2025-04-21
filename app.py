@@ -96,7 +96,7 @@ def calculate():
 
     selected_items = []
     for _, row in filtered.iterrows():
-        if row['Nombre'] in data['selected_items']:
+        if row['CATEGORIA'] in data['selected_items']:
             selected_items.append(row.to_dict())
 
     price_details = calculate_menu_price(
