@@ -47,6 +47,15 @@ def get_session_messages():
 def index():
     return render_template('chatbot.html')
 
+@app.route('/api/get-dishes', methods=['POST'])
+def get_dishes():
+    data = request.json
+    gastronomic_type = data['gastronomic_type']
+    df = load_menu_data()
+    filtered = filter_menu(df, gastronomic_type)
+    dishes = filtered['Nombre'].dropna().unique().tolist()
+    return jsonify({"dishes": dishes})
+
 # Chatbot Route
 @app.route('/api/chat', methods=['POST'])
 def chat():
