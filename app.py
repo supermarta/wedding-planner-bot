@@ -34,6 +34,11 @@ Debes hacer las siguientes preguntas:
 
 Una vez recibida esta información, el sistema generará 3 propuestas automáticas con combinaciones de platos y precios calculados.
 """
+# Helper: Get or initialize conversation messages
+def get_session_messages():
+    if "messages" not in session:
+        session["messages"] = [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}]
+    return session["messages"]
 
 # Helper: Always reset system message
 @app.route('/api/chat', methods=['POST'])
