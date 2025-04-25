@@ -98,11 +98,11 @@
         const data = await response.json();
         appendMessage(data.reply, 'Bot');
 
-        // Optional: Call proposal endpoint after chatbot completes (based on logic)
-        // You can customize the trigger condition here
-        if (message.toLowerCase().includes("calculate") || message.toLowerCase().includes("menu")) {
+        //  If the backend says it's time, show the proposals
+        if (data.trigger_proposals) {
             getProposals();
         }
+
     }
 
     async function getProposals() {
