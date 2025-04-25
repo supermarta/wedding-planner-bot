@@ -39,16 +39,31 @@ Una vez recibida esta información, el sistema generará 3 propuestas automátic
 @app.route('/api/chat', methods=['POST'])
 def chat():
     user_message = request.json.get('message')
-    messages = [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}]
+    messages = get_session_messages()
     messages.append({"role": "user", "content": user_message})
 
     try:
+        # Get OpenAI response
         response = client.chat.completions.create(
             model="gpt-4",
             messages=messages
         )
         reply = response.choices[0].message.content
-        return jsonify({"reply": reply})
+        messages.append({"role": "assistant", "content": reply})
+        session["messages"] = messages  # Save updated conversation
+
+        # Trigger proposals only when key info is detected
+        keywords = ["alquimia", "chas"]
+        has_guests = any(word in user_message.lower() for word in keywords) and any(char.isdigit() for char in user_message)
+        has_time = "noche" in user_message.lower() or "día" in user_message.lower()
+
+        trigger = has_guests and has_time
+
+        return jsonify({
+            "reply": reply,
+            "trigger_proposals": trigger  # frontend will use this to call getProposals()
+        })
+
     except Exception as e:
         return jsonify({"reply": "Lo siento, ha ocurrido un error al procesar tu mensaje."})
 
