@@ -5,6 +5,8 @@ from services.email_service import send_email
 from services.pdf_generator import generate_pdf
 from openai import OpenAI
 from dotenv import load_dotenv
+from random import sample
+import pandas as pd
 import os
 
 # Load environment variables
@@ -88,25 +90,37 @@ def chat():
         return jsonify({"reply": "Lo siento, ha ocurrido un error al procesar tu mensaje."})
 
 # Price Calculator
-@app.route('/api/calculate', methods=['POST'])
-def calculate():
+@app.route('/api/calculate-proposals', methods=['POST'])
+def generate_proposals():
+
     data = request.json
     df = load_menu_data()
-    filtered = filter_menu(df, data['gastronomic_type'])
+    filtered_df = filter_menu(df, data['gastronomic_type'])
 
-    selected_items = []
-    for _, row in filtered.iterrows():
-        if row['CATEGORIA'] in data['selected_items']:
-            selected_items.append(row.to_dict())
+    all_items = filtered_df.to_dict(orient='records')
+    proposals = []
 
-    price_details = calculate_menu_price(
-        selected_items,
-        data['guests'],
-        data['gastronomic_type'],
-        data['time_of_day']
-    )
+    # Generate 3 combos of proposals randomly
+    for i in range(3):
+        selected_items = sample(all_items, 5)  # pick 5 random dishes
+        price_per_guest, total = calculate_menu_price(
+            selected_items,
+            data['guests'],
+            data['gastronomic_type'],
+            data['time_of_day']
+        )
 
-    return jsonify(price_details)
+        proposals.append({
+            "id": f"proposal_{i+1}",
+            "selected_items": [item['Nombre'] for item in selected_items],
+            "guests": data['guests'],
+            "time_of_day": data['time_of_day'],
+            "gastronomic_type": data['gastronomic_type'],
+            "price_per_guest": price_per_guest,
+            "total_price": total
+        })
+
+    return jsonify(proposals)
 
 # Send PDF Proposal
 @app.route('/api/send-proposal', methods=['POST'])
